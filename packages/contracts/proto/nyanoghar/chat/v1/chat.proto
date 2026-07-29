@@ -1,0 +1,197 @@
+syntax = "proto3";
+
+package nyanoghar.chat.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nyanoghar/chat-svc/gen/nyanoghar/chat/v1;chatv1";
+
+// Chat is implemented by the Go messaging service. Fastify services call it
+// server-to-server; mobile clients hold a WebSocket to the same service,
+// proxied through the API gateway.
+service ChatService {
+  // Creates a conversation, or returns the existing one for the same
+  // (participants, context) pair. Safe to call repeatedly.
+  rpc CreateConversation(CreateConversationRequest) returns (Conversation);
+
+  rpc GetConversation(GetConversationRequest) returns (Conversation);
+
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+
+  rpc SendMessage(SendMessageRequest) returns (Message);
+
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+
+  // Server-streaming feed of events for one user, used by the WS gateway.
+  rpc StreamEvents(StreamEventsRequest) returns (stream ChatEvent);
+
+  // Moderation and safety hooks called by the platform, not by clients.
+  rpc BlockUser(BlockUserRequest) returns (BlockUserResponse);
+  rpc RedactMessage(RedactMessageRequest) returns (RedactMessageResponse);
+}
+
+// What a conversation is attached to. Chat is always anchored to a real
+// platform interaction so moderators have context.
+enum ConversationContext {
+  CONVERSATION_CONTEXT_UNSPECIFIED = 0;
+  CONVERSATION_CONTEXT_PET_INQUIRY = 1;
+  CONVERSATION_CONTEXT_ADOPTION_APPLICATION = 2;
+  CONVERSATION_CONTEXT_APPOINTMENT = 3;
+  CONVERSATION_CONTEXT_SHOP_INQUIRY = 4;
+  CONVERSATION_CONTEXT_SUPPORT = 5;
+}
+
+enum MessageKind {
+  MESSAGE_KIND_UNSPECIFIED = 0;
+  MESSAGE_KIND_TEXT = 1;
+  MESSAGE_KIND_IMAGE = 2;
+  MESSAGE_KIND_DOCUMENT = 3;
+  MESSAGE_KIND_SYSTEM = 4;
+}
+
+message Participant {
+  string user_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;
+  bool is_muted = 4;
+  google.protobuf.Timestamp last_read_at = 5;
+}
+
+message Conversation {
+  string id = 1;
+  ConversationContext context = 2;
+  // Id of the pet, application or appointment this thread belongs to.
+  string context_id = 3;
+  repeated Participant participants = 4;
+  Message last_message = 5;
+  uint32 unread_count = 6;
+  bool is_archived = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message Message {
+  string id = 1;
+  string conversation_id = 2;
+  string sender_id = 3;
+  MessageKind kind = 4;
+  string body = 5;
+  repeated Attachment attachments = 6;
+  // Client-supplied idempotency key; retries never duplicate a message.
+  string client_message_id = 7;
+  bool is_redacted = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp edited_at = 10;
+}
+
+message Attachment {
+  string id = 1;
+  string url = 2;
+  string thumbnail_url = 3;
+  string mime_type = 4;
+  uint64 size_bytes = 5;
+}
+
+message CreateConversationRequest {
+  ConversationContext context = 1;
+  string context_id = 2;
+  repeated string participant_ids = 3;
+  // Optional opening message sent atomically with creation.
+  string initial_message = 4;
+  string created_by = 5;
+}
+
+message GetConversationRequest {
+  string conversation_id = 1;
+  string requester_id = 2;
+}
+
+message ListConversationsRequest {
+  string user_id = 1;
+  uint32 limit = 2;
+  string cursor = 3;
+  bool include_archived = 4;
+}
+
+message ListConversationsResponse {
+  repeated Conversation conversations = 1;
+  string next_cursor = 2;
+}
+
+message SendMessageRequest {
+  string conversation_id = 1;
+  string sender_id = 2;
+  MessageKind kind = 3;
+  string body = 4;
+  repeated Attachment attachments = 5;
+  string client_message_id = 6;
+}
+
+message ListMessagesRequest {
+  string conversation_id = 1;
+  string requester_id = 2;
+  uint32 limit = 3;
+  // Cursor pages backwards through history.
+  string before_cursor = 4;
+}
+
+message ListMessagesResponse {
+  repeated Message messages = 1;
+  string next_cursor = 2;
+}
+
+message MarkReadRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+  string up_to_message_id = 3;
+}
+
+message MarkReadResponse {
+  uint32 unread_count = 1;
+}
+
+message StreamEventsRequest {
+  string user_id = 1;
+}
+
+message ChatEvent {
+  oneof event {
+    Message message_created = 1;
+    MessageRead message_read = 2;
+    TypingIndicator typing = 3;
+    Conversation conversation_updated = 4;
+  }
+}
+
+message MessageRead {
+  string conversation_id = 1;
+  string user_id = 2;
+  google.protobuf.Timestamp read_at = 3;
+}
+
+message TypingIndicator {
+  string conversation_id = 1;
+  string user_id = 2;
+  bool is_typing = 3;
+}
+
+message BlockUserRequest {
+  string blocker_id = 1;
+  string blocked_id = 2;
+}
+
+message BlockUserResponse {
+  bool blocked = 1;
+}
+
+message RedactMessageRequest {
+  string message_id = 1;
+  string moderator_id = 2;
+  string reason = 3;
+}
+
+message RedactMessageResponse {
+  bool redacted = 1;
+}

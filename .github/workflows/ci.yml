@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Allow manual runs from the Actions tab.
+  workflow_dispatch:
+
+# A new push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    name: typecheck · lint · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # core-api imports the built packages, so these must exist before
+      # typecheck runs.
+      - name: Build shared packages
+        run: pnpm --filter "./packages/**" build
+
+      - name: Lint and format check
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # Integration tests need a real Postgres. They run only when the
+      # TEST_DATABASE_URL secret is configured — point it at a throwaway
+      # database (a Neon branch works well), never production: the suite
+      # writes and deletes rows.
+      - name: Integration tests
+        working-directory: services/core-api
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+        run: |
+          if [ -z "$TEST_DATABASE_URL" ]; then
+            echo "TEST_DATABASE_URL not configured — skipping integration tests."
+            exit 0
+          fi
+          pnpm test:integration
+
+      # Catches a schema edit that was committed without regenerating the
+      # migration — the drift only shows up at deploy time otherwise.
+      - name: Check migrations are up to date
+        working-directory: services/core-api
+        env:
+          DATABASE_URL: postgresql://unused:unused@localhost:5432/unused
+        run: |
+          pnpm exec drizzle-kit generate --name ci-drift-check
+          if ! git diff --quiet -- drizzle/; then
+            echo "::error::Schema changed without a matching migration. Run 'pnpm db:generate' and commit the result."
+            git diff --stat -- drizzle/
+            exit 1
+          fi
+
+  go:
+    name: chat-svc
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: services/chat-svc/go.sum
+
+      - name: Build
+        working-directory: services/chat-svc
+        run: go build ./...
+
+      - name: Vet
+        working-directory: services/chat-svc
+        run: go vet ./...
+
+      - name: Test
+        working-directory: services/chat-svc
+        run: go test ./...

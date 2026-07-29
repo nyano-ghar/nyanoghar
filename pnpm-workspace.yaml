@@ -1,0 +1,8 @@
+packages:
+  - "packages/*"
+  - "services/core-api"
+# argon2 compiles a native addon and esbuild fetches its platform binary;
+# both need their install scripts to run.
+allowBuilds:
+  argon2: true
+  esbuild: true

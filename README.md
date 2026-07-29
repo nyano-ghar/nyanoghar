@@ -4,11 +4,6 @@ Backend for the Nyanoghar pet adoption and pet-care platform (Nepal). One
 Fastify service in TypeScript for everything transactional, one Go service for
 real-time messaging.
 
-> This is a standalone project. It is unrelated to the NestJS app in
-> `../backend` and shares no code, database or deployment with it.
-
----
-
 ## Architecture
 
 ```

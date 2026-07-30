@@ -159,15 +159,26 @@ export const petMedia = catalogSchema.table(
       .notNull()
       .references(() => pets.id, { onDelete: "cascade" }),
     kind: mediaKindEnum("kind").notNull().default("IMAGE"),
-    url: text("url").notNull(),
-    thumbnailUrl: text("thumbnail_url"),
+    // Storage coordinates, not a URL. The CDN domain is applied at read time
+    // so replacing a distribution does not require rewriting history, and so
+    // a private object can never accidentally carry a public URL.
+    bucket: text("bucket").notNull(),
+    key: text("key").notNull(),
+    thumbnailKey: text("thumbnail_key"),
+    contentType: text("content_type"),
+    sizeBytes: integer("size_bytes"),
     position: integer("position").notNull().default(0),
     // Documents (vaccination cards) are only visible to the owner and to
     // applicants the owner has shortlisted.
     isPrivate: boolean("is_private").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("pet_media_pet_idx").on(table.petId, table.position)],
+  (table) => [
+    index("pet_media_pet_idx").on(table.petId, table.position),
+    // One row per stored object: confirm is idempotent and a replayed confirm
+    // must not create a duplicate.
+    uniqueIndex("pet_media_bucket_key_unique").on(table.bucket, table.key),
+  ],
 );
 
 export const favorites = catalogSchema.table(

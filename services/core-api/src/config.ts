@@ -47,6 +47,44 @@ const envSchema = baseEnvSchema
     /** How far ahead a customer may book an appointment. */
     APPOINTMENT_HORIZON_DAYS: z.coerce.number().int().positive().default(90),
 
+    // --- media (S3 + CloudFront) ------------------------------------------
+    // Binary media never transits the API: clients PUT straight to S3 with a
+    // presigned URL and read public objects through CloudFront (spec 15, 17).
+    MEDIA_S3_REGION: z.string().min(1).default("ap-south-1"),
+    MEDIA_S3_ACCESS_KEY_ID: z.string().min(16),
+    MEDIA_S3_SECRET_ACCESS_KEY: z.string().min(32),
+    /** Approved listing photos. Fronted by CloudFront, never read directly. */
+    MEDIA_PUBLIC_BUCKET: z.string().min(1),
+    /**
+     * Verification documents and health records. Must be a *different* bucket
+     * with all public access blocked and no CloudFront origin — one bucket
+     * has one policy, and a prefix condition is the only thing that would
+     * keep documents private. Two buckets fail closed instead.
+     */
+    MEDIA_PRIVATE_BUCKET: z.string().min(1),
+    /**
+     * CloudFront domain for public reads, without a scheme. Only ever applied
+     * at read time: rows store the S3 key, so changing distributions does not
+     * require rewriting history.
+     */
+    MEDIA_CDN_DOMAIN: z.string().min(1),
+    /** Presigned PUT lifetime. Short: the URL is used immediately. */
+    MEDIA_UPLOAD_URL_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(3600)
+      .default(300),
+    /** Presigned GET lifetime for private objects. */
+    MEDIA_PRIVATE_URL_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(3600)
+      .default(300),
+    /** Rejected at presign time, and enforced again by the S3 policy. */
+    MEDIA_MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(10_485_760),
+
     // --- chat (still a separate service) ----------------------------------
     CHAT_SERVICE_URL: z.string().url().default("http://chat-svc:8080"),
     CHAT_SERVICE_WS_URL: z.string().default("ws://chat-svc:8080"),

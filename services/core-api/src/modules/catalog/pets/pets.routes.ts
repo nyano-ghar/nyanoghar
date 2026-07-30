@@ -141,34 +141,9 @@ export const petRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => service.removeFavorite(request.user!.id, request.params.petId),
   );
 
-  app.post(
-    "/:petId/media",
-    {
-      onRequest: [app.requireRoles(Role.PET_OWNER, Role.ORGANIZATION)],
-      schema: {
-        tags: ["pets"],
-        summary: "Attach media to a listing",
-        params: z.object({ petId: uuidSchema }),
-        body: z.object({
-          kind: z.enum(["IMAGE", "VIDEO", "DOCUMENT"]).default("IMAGE"),
-          url: z.string().url(),
-          thumbnailUrl: z.string().url().nullable().default(null),
-          position: z.number().int().nonnegative().default(0),
-          isPrivate: z.boolean().default(false),
-        }),
-        response: { 201: z.any() },
-      },
-    },
-    async (request, reply) => {
-      const created = await service.addMedia(
-        request.params.petId,
-        request.user!.id,
-        request.body,
-      );
-      reply.status(201);
-      return created;
-    },
-  );
+  // Media lives in its own plugin (media.routes.ts): uploads go straight to
+  // S3 via presigned URLs, so the old "trust a client-supplied url" route is
+  // gone.
 
   app.get(
     "/me/listings",

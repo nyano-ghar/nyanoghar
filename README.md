@@ -61,7 +61,7 @@ retention.
 ## Repository layout
 
 ```
-nyanoghar-backend/
+nyanoghar/
 ├── packages/                 shared, versioned in-repo
 │   ├── config/               env parsing + validation (fails fast)
 │   ├── errors/               error taxonomy + Fastify error handler
@@ -87,8 +87,8 @@ nyanoghar-backend/
 (for Postgres). Go 1.23+ only if you want to work on the chat service.
 
 ```bash
-git clone https://github.com/<owner>/nyanoghar-backend.git
-cd nyanoghar-backend
+git clone https://github.com/nyano-ghar/nyanoghar.git
+cd nyanoghar
 
 cp .env.example .env    # works as-is; no editing required
 pnpm install

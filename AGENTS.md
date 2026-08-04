@@ -38,6 +38,13 @@ pnpm infra:up:media                            # + MinIO, to work on uploads
 Integration tests need a database:
 `TEST_DATABASE_URL='postgres://nyanoghar:nyanoghar@localhost:5432/nyanoghar' pnpm test:integration`
 
+## Branches
+
+Check `git branch --show-current` before starting. Work on a fresh branch cut
+from `main`, named to match the commit type — `feat/breed-filter`,
+`fix/session-revocation`, `docs/minio-setup`. Never commit to `main` directly,
+and do not stack unrelated work on an existing feature branch.
+
 ## Commits
 
 [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):

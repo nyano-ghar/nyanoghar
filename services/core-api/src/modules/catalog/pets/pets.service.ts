@@ -4,12 +4,7 @@ import {
   type ListingStatus,
   type PetSearchQuery,
 } from "@nyanoghar/contracts";
-import {
-  ConflictError,
-  ForbiddenError,
-  NotFoundError,
-  UnprocessableError,
-} from "@nyanoghar/errors";
+import { ForbiddenError, NotFoundError, UnprocessableError } from "@nyanoghar/errors";
 import { and, desc, eq, gte, isNull, lte, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Config } from "../../../config.js";
@@ -17,17 +12,11 @@ import type { Database } from "../../../db/client.js";
 import {
   favorites,
   type PetRow,
-  petMedia,
   petStatusHistory,
   pets,
 } from "../../../db/schema/index.js";
 
 export type CreatePetInput = z.infer<typeof createPetSchema>;
-
-export type AddMediaInput = Pick<
-  typeof petMedia.$inferInsert,
-  "kind" | "url" | "thumbnailUrl" | "position" | "isPrivate"
->;
 
 export class PetsService {
   constructor(
@@ -297,31 +286,6 @@ export class PetsService {
     }
 
     return { favorited: false };
-  }
-
-  async addMedia(petId: string, ownerId: string, media: AddMediaInput) {
-    const pet = await this.db.query.pets.findFirst({
-      where: and(eq(pets.id, petId), eq(pets.ownerId, ownerId), isNull(pets.deletedAt)),
-    });
-    if (!pet) throw new NotFoundError("Pet");
-
-    const [{ count } = { count: 0 }] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(petMedia)
-      .where(eq(petMedia.petId, pet.id));
-
-    if (count >= this.config.MAX_MEDIA_PER_PET) {
-      throw new ConflictError(
-        `A listing can hold at most ${this.config.MAX_MEDIA_PER_PET} media items`,
-      );
-    }
-
-    const [created] = await this.db
-      .insert(petMedia)
-      .values({ petId: pet.id, ...media })
-      .returning();
-
-    return created;
   }
 
   /** The owner's own listings, in any status. */

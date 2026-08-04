@@ -1,0 +1,87 @@
+name: Bug Report
+description: Report something that is broken
+labels: ["kind/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug.
+
+        **If this is a security vulnerability, do not file it here.** Report it
+        privately — see [SECURITY.md](https://github.com/nyano-ghar/nyanoghar/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you see?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How can we reproduce it, as minimally and precisely as possible?
+      description: |
+        A failing request is ideal. Please redact tokens and passwords.
+      value: |
+        1.
+        2.
+        3.
+
+        ```console
+        $ curl -i http://localhost:4000/api/v1/...
+        # paste the response here
+        ```
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Which area is affected?
+      options:
+        - identity (accounts, sessions, roles)
+        - catalog (listings, media, search)
+        - adoption (applications, meetings)
+        - provider (clinics, shops, appointments)
+        - chat-svc (Go)
+        - setup / infra / docker-compose
+        - not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        From `pnpm dev`. Include the `requestId` from the error response if you
+        have one — it appears in the logs and makes tracing much faster.
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        - OS:
+        - Node version (`node --version`):
+        - pnpm version (`pnpm --version`):
+        - Database: <!-- docker-compose / Neon / other -->
+        - Media storage: <!-- none (stub) / MinIO / real S3 -->
+        - Commit or branch:
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything else we should know?

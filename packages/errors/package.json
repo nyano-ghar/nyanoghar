@@ -16,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "fastify": "^5.2.0",
-    "zod": "^3.24.1"
+    "fastify": "catalog:",
+    "zod": "catalog:"
   }
 }

@@ -24,6 +24,7 @@ import {
 import { config } from "./config.js";
 import { createDatabase, type Database, type DbHandle } from "./db/client.js";
 import { applicationRoutes } from "./modules/adoption/applications/applications.routes.js";
+import { mediaRoutes } from "./modules/catalog/media/media.routes.js";
 import { petRoutes } from "./modules/catalog/pets/pets.routes.js";
 import { referenceRoutes } from "./modules/catalog/reference/reference.routes.js";
 import { authRoutes } from "./modules/identity/auth/auth.routes.js";
@@ -241,6 +242,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
   await app.register(userRoutes, { prefix: "/api/v1/users" });
   await app.register(petRoutes, { prefix: "/api/v1/pets" });
+  // Shares the /pets prefix but is a separate plugin: it owns the S3 client,
+  // which needs its own lifecycle.
+  await app.register(mediaRoutes, { prefix: "/api/v1/pets" });
   await app.register(referenceRoutes, { prefix: "/api/v1/reference" });
   await app.register(applicationRoutes, { prefix: "/api/v1/applications" });
   await app.register(providerRoutes, { prefix: "/api/v1/providers" });

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/nyano-ghar/nyanoghar/security/advisories/new
+    about: Please report vulnerabilities privately, never as a public issue.
+  - name: Question or setup help
+    url: https://github.com/nyano-ghar/nyanoghar/discussions
+    about: Ask in Discussions rather than opening an issue.
+  - name: Setup troubleshooting
+    url: https://github.com/nyano-ghar/nyanoghar/blob/main/CONTRIBUTING.md#common-problems
+    about: Common first-run problems and their fixes.

@@ -6,3 +6,32 @@ packages:
 allowBuilds:
   argon2: true
   esbuild: true
+
+# Single source of truth for dependencies declared by more than one workspace
+# package. Members reference these as `"zod": "catalog:"` — the declaration
+# stays in each package.json (so the dependency graph is still honest and
+# phantom imports still fail), but the version is defined once here.
+#
+# Only multi-declarer deps belong here; cataloguing a package used in one
+# place adds indirection without preventing anything. Deps that stay local:
+# jose and dotenv (auth, config), pino/pino-pretty (logger), and core-api's
+# @fastify/* plugins, drizzle, postgres, ioredis, argon2, nanoid.
+#
+# zod in particular must remain a declared dependency of contracts: its
+# public API ships Zod schemas, so zod is part of that package's type
+# surface and has to resolve for any consumer type-checking against dist/.
+catalog:
+  # Shared by auth, config, contracts, errors and core-api. Zod 3 and 4 have
+  # incompatible type surfaces, so a split here would break the
+  # fastify-type-provider-zod boundary in confusing ways.
+  zod: ^3.24.1
+  # Shared by auth, errors and core-api. Two Fastify majors in one process
+  # means two plugin registries and duplicate type declarations.
+  fastify: ^5.2.0
+  # Shared by auth and core-api; its major must track Fastify's.
+  fastify-plugin: ^5.0.1
+  # Toolchain shared by the root and core-api.
+  typescript: ^5.7.2
+  vitest: ^2.1.8
+  tsx: ^4.19.2
+  "@types/node": ^22.10.2

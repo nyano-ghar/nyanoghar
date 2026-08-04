@@ -4,6 +4,11 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Private agent notes. Contributor-facing guidance is in AGENTS.md, which is
+# committed; this file is personal and stays local.
+CLAUDE.md
+.claude/
 coverage/
 .DS_Store
 *.log

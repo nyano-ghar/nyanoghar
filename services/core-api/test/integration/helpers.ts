@@ -38,12 +38,40 @@ export async function buildTestApp(): Promise<FastifyInstance> {
   return app;
 }
 
+/**
+ * Whether the target database expects TLS.
+ *
+ * Hosted Postgres (Neon, RDS) requires it; the local docker-compose container
+ * does not offer it at all, and forcing `ssl: "require"` there fails with
+ * "socket disconnected before secure TLS connection was established". Local
+ * hosts default to off so `pnpm infra:up` works out of the box, and anything
+ * else defaults to on — `?sslmode=` in the URL overrides either way.
+ */
+function shouldUseTls(url: string): boolean {
+  const { hostname, searchParams } = new URL(url);
+  const sslmode = searchParams.get("sslmode");
+
+  if (sslmode) return sslmode !== "disable";
+
+  return ![
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "postgres",
+    "host.docker.internal",
+  ].includes(hostname);
+}
+
 /** Direct SQL handle, for setup and assertions the API does not expose. */
 export function testSql() {
   if (!TEST_DATABASE_URL) {
     throw new Error("TEST_DATABASE_URL is required for integration tests");
   }
-  return postgres(TEST_DATABASE_URL, { ssl: "require", max: 2, prepare: false });
+  return postgres(TEST_DATABASE_URL, {
+    ssl: shouldUseTls(TEST_DATABASE_URL) ? "require" : false,
+    max: 2,
+    prepare: false,
+  });
 }
 
 /**

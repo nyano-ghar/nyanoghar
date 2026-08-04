@@ -1,0 +1,67 @@
+# Always check out and commit text files with LF line endings.
+#
+# Without this, a contributor on Windows commits CRLF and every subsequent
+# diff on Linux or macOS shows the whole file as changed. It also keeps shell
+# scripts working: infra/init-databases.sh is executed inside a Linux
+# container, and CRLF there fails with a "bad interpreter" error that is
+# genuinely hard to diagnose.
+* text=auto eol=lf
+
+# Files that must keep LF regardless of any local core.autocrlf setting,
+# because something other than git reads them.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# Windows-only files that would break with LF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# --- Binary: never diff, never normalise ---------------------------------
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.mp4 binary
+*.mov binary
+
+# --- Generated: exclude from language stats and collapse in review --------
+# `linguist-generated` hides these from PR diffs by default and stops them
+# skewing the repo's language breakdown; `-diff` keeps them out of textual
+# diffs entirely.
+pnpm-lock.yaml linguist-generated=true -diff
+services/chat-svc/go.sum linguist-generated=true -diff
+packages/contracts/src/proto/gen/** linguist-generated=true -diff
+
+# Drizzle writes these; they are committed but never hand-edited. The SQL
+# stays diffable — reviewing a migration matters — but the journal and
+# snapshot JSON are noise.
+services/core-api/drizzle/meta/** linguist-generated=true -diff
+
+# --- Language detection ---------------------------------------------------
+# Documentation and vendored fixtures should not count toward the language
+# breakdown shown on the repository page.
+*.md linguist-documentation
+docs/** linguist-documentation
+
+# The product spec is a requirements document, not code.
+nyanoghar-backend-project-overview.md linguist-documentation
+
+# --- Merge behaviour ------------------------------------------------------
+# A lockfile conflict is never resolved by hand; regenerate it with
+# `pnpm install` instead of trying to merge hunks.
+pnpm-lock.yaml merge=binary
+services/chat-svc/go.sum merge=binary

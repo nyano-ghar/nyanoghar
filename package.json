@@ -17,16 +17,21 @@
     "db:generate": "pnpm --filter @nyanoghar/core-api db:generate",
     "db:migrate": "pnpm --filter @nyanoghar/core-api db:migrate",
     "db:studio": "pnpm --filter @nyanoghar/core-api db:studio",
-    "infra:up": "docker compose -f infra/docker-compose.yml up -d postgres redis nats",
+    "db:seed": "pnpm --filter @nyanoghar/core-api db:seed",
+    "setup": "pnpm --filter \"./packages/**\" build && pnpm db:migrate && pnpm db:seed",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d postgres",
+    "infra:up:media": "docker compose -f infra/docker-compose.yml up -d postgres minio minio-init",
+    "infra:up:all": "docker compose -f infra/docker-compose.yml up -d postgres redis nats minio minio-init",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "infra:reset": "docker compose -f infra/docker-compose.yml down -v",
     "stack:up": "docker compose -f infra/docker-compose.yml up --build",
     "proto:gen": "buf generate packages/contracts/proto"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.6",
-    "@types/node": "^22.10.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

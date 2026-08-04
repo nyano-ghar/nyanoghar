@@ -1,0 +1,61 @@
+name: Feature Request
+description: Suggest a capability or an improvement
+labels: ["kind/feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please check `nyanoghar-backend-project-overview.md` —
+        it is the product spec and may already describe this. Referencing a
+        section number (§7.3, §22, …) helps a lot.
+
+        Note that §22 is the MVP scope and §23 is explicitly out of scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: |
+        Describe the situation, not the solution. Who is blocked, and by what?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+    validations:
+      required: true
+
+  - type: input
+    id: spec-section
+    attributes:
+      label: Related spec section
+      description: e.g. "§7.3 catalog" — leave blank if this is not in the spec.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Which area would this affect?
+      options:
+        - identity (accounts, sessions, roles)
+        - catalog (listings, media, search)
+        - adoption (applications, meetings)
+        - provider (clinics, shops, appointments)
+        - chat-svc (Go)
+        - setup / infra / developer experience
+        - not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Would you like to work on this?
+      options:
+        - label: I am willing to open a PR for this

@@ -77,6 +77,118 @@ jobs:
             exit 1
           fi
 
+  # Every step is a literal command from the README. The `node` job runs with a
+  # warm workspace and has stayed green while the fresh-clone path was broken.
+  fresh-clone:
+    name: fresh clone · setup · boot
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # compose, not a `services:` container — this must exercise
+      # infra/init-databases.sh, which creates the second database.
+      - name: pnpm infra:up
+        run: pnpm infra:up
+
+      - name: Wait for Postgres to report healthy
+        run: |
+          for _ in $(seq 1 40); do
+            status=$(docker inspect --format '{{.State.Health.Status}}' nyanoghar-postgres-1 2>/dev/null || echo missing)
+            if [ "$status" = healthy ]; then echo "postgres healthy"; exit 0; fi
+            sleep 3
+          done
+          echo "::error::Postgres never became healthy"
+          docker logs nyanoghar-postgres-1 2>&1 | tail -40
+          exit 1
+
+      - name: Both databases exist, with their extensions
+        run: |
+          set -euo pipefail
+          for db in nyanoghar chat; do
+            docker exec nyanoghar-postgres-1 psql -U nyanoghar -d "$db" -tAc 'select 1' >/dev/null
+            for ext in postgis pg_trgm; do
+              found=$(docker exec nyanoghar-postgres-1 psql -U nyanoghar -d "$db" -tAc \
+                "select 1 from pg_extension where extname = '$ext'")
+              [ "$found" = "1" ] || { echo "::error::$ext missing from $db"; exit 1; }
+            done
+            echo "$db ok"
+          done
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Never set DATABASE_URL below — the point is that the root .env is
+      # found from a package subdirectory.
+      - name: cp .env.example .env
+        run: cp .env.example .env
+
+      - name: pnpm setup
+        run: pnpm setup
+
+      - name: Reference data was seeded
+        run: |
+          count=$(docker exec nyanoghar-postgres-1 psql -U nyanoghar -d nyanoghar -tAc \
+            'select count(*) from catalog.species')
+          [ "$count" -gt 0 ] || { echo "::error::no species seeded"; exit 1; }
+          echo "seeded $count species"
+
+      - name: Seeding is idempotent
+        run: |
+          before=$(docker exec nyanoghar-postgres-1 psql -U nyanoghar -d nyanoghar -tAc \
+            'select count(*) from catalog.breeds')
+          pnpm db:seed
+          after=$(docker exec nyanoghar-postgres-1 psql -U nyanoghar -d nyanoghar -tAc \
+            'select count(*) from catalog.breeds')
+          [ "$before" = "$after" ] || { echo "::error::rerunning db:seed changed breeds $before -> $after"; exit 1; }
+          echo "breeds stable at $after"
+
+      - name: pnpm dev serves the documented endpoints
+        run: |
+          set -euo pipefail
+          pnpm dev > dev.log 2>&1 &
+          for _ in $(seq 1 40); do
+            if curl -fsS http://localhost:4000/health >/dev/null 2>&1; then break; fi
+            sleep 3
+          done
+
+          curl -fsS http://localhost:4000/health | tee /dev/stderr | grep -q '"status":"ok"'
+
+          species=$(curl -fsS http://localhost:4000/api/v1/reference/species \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).length))")
+          [ "$species" -gt 0 ] || { echo "::error::/reference/species returned none"; exit 1; }
+
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST http://localhost:4000/api/v1/auth/register \
+            -H 'content-type: application/json' \
+            -d '{"fullName":"CI User","email":"ci@example.test","password":"Correct1Horse","acceptedTermsVersion":"1.0"}')
+          [ "$code" = 201 ] || { echo "::error::register returned $code, expected 201"; exit 1; }
+
+          grep -q 'no S3 credentials configured' dev.log \
+            || { echo "::error::expected the media stub warning"; exit 1; }
+
+          echo "fresh clone is usable"
+
+      - name: Server logs
+        if: failure()
+        run: tail -60 dev.log || true
+
+      - name: Postgres logs
+        if: failure()
+        run: docker logs nyanoghar-postgres-1 2>&1 | tail -60 || true
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f infra/docker-compose.yml down -v
+
   go:
     name: chat-svc
     runs-on: ubuntu-latest

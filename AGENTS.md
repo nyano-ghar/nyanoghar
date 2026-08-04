@@ -67,7 +67,9 @@ feat(media)!: store bucket and key instead of a URL
 - Errors: throw a typed error from `@nyanoghar/errors`. Never leak internals.
 - Validation: Zod at the boundary; shared shapes in `@nyanoghar/contracts`.
 - Lifecycles are transition tables, not `if` chains. Extend the table.
-- Comments explain *why*, not *what*.
+- Comments: few and short. Only where a reader would otherwise get it wrong —
+  a workaround, a footgun, an ordering constraint. One line, not a block.
+  Never narrate what the code does; put longer reasoning in the commit message.
 - User-visible change? Add a line under `## [Unreleased]` in `CHANGELOG.md`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and review conventions.

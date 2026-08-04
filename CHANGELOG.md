@@ -17,7 +17,7 @@ regardless of version.
 - Apache 2.0 licence, `NOTICE`, code of conduct, security policy, support
   guide, issue and pull request templates, and `.gitattributes`.
 - `AGENTS.md` — concise repository conventions for contributors and coding
-  agents.
+  agents, including branch naming and when a change must carry a doc update.
 - [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)
   for commit messages, documented in `CONTRIBUTING.md` and `AGENTS.md`.
 - Local S3-compatible media development via MinIO (`pnpm infra:up:media`), with

@@ -70,6 +70,22 @@ feat(media)!: store bucket and key instead of a URL
 - Comments: few and short. Only where a reader would otherwise get it wrong —
   a workaround, a footgun, an ordering constraint. One line, not a block.
   Never narrate what the code does; put longer reasoning in the commit message.
-- User-visible change? Add a line under `## [Unreleased]` in `CHANGELOG.md`.
+## Docs follow the code
+
+Update docs in the same PR as the change, not afterwards. The test: **would
+someone acting on the current docs now be wrong?** If yes, fix them; if the
+docs are just less complete than they could be, leave them.
+
+| Changed | Update |
+| --- | --- |
+| Route, request/response shape, status code | `CHANGELOG.md`, `README.md` if documented there |
+| Env var added, removed, or now required | `.env.example`, `CHANGELOG.md` |
+| A setup or run step | `README.md`, the commands above |
+| A rule contributors must follow | this file, `CONTRIBUTING.md` |
+| Auth or media visibility | `SECURITY.md` |
+
+No doc change for an internal refactor, a rename, a new test, or a performance
+fix with identical behaviour. Keep edits small — prefer changing a line to
+adding one.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and review conventions.

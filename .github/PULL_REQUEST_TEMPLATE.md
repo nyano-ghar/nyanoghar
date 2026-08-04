@@ -57,6 +57,9 @@ Fixes #
 - [ ] New env var? Added it to `.env.example` and the config schema
 - [ ] Touched auth, media visibility, or a transition table? Explained the
       security reasoning below
+- [ ] Docs updated in this PR — would someone acting on the current README,
+      `AGENTS.md` or `CHANGELOG.md` now be wrong? (No change needed for an
+      internal refactor)
 
 #### Does this need a changelog entry?
 

@@ -8,7 +8,7 @@ import {
 } from "@nyanoghar/contracts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { MediaStorage } from "../../../lib/media/storage.js";
+import { createMediaStorage } from "../../../lib/media/storage.js";
 import { MediaService } from "./media.service.js";
 
 /**
@@ -19,8 +19,15 @@ import { MediaService } from "./media.service.js";
  * result.
  */
 export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
-  const storage = new MediaStorage(app.config);
+  const storage = createMediaStorage(app.config);
   const service = new MediaService(app.db, app.config, storage);
+
+  if (!app.config.MEDIA_ENABLED) {
+    app.log.warn(
+      "media: no S3 credentials configured — upload routes will return 501. " +
+        "This is expected for local development.",
+    );
+  }
 
   app.addHook("onClose", async () => {
     await storage.close();
